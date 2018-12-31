@@ -323,6 +323,7 @@ class ExportGLTF2_Base():
 
         export_settings['gltf_filepath'] = bpy.path.ensure_ext(self.filepath, self.filename_ext)
         export_settings['gltf_filedirectory'] = os.path.dirname(export_settings['gltf_filepath']) + '/'
+        export_settings['gltf_default_name'] = ""
 
         export_settings['gltf_format'] = self.export_format
         export_settings['gltf_copyright'] = self.export_copyright

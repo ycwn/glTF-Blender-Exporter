@@ -98,20 +98,24 @@ def save(operator,
     
     #
 
+    object_name = export_settings['gltf_default_name']
+    file_path   = export_settings['gltf_filepath'].replace('{NAME}', object_name)
+    binary_path = export_settings['gltf_binaryfilename'].replace('{NAME}', object_name)
+
     if export_settings['gltf_format'] == 'ASCII':
-        file = open(export_settings['gltf_filepath'], "w", encoding="utf8", newline="\n")
+        file = open(file_path, "w", encoding="utf8", newline="\n")
         file.write(glTF_encoded)
         file.write("\n")
         file.close()
         
         binary = export_settings['gltf_binary']
         if len(binary) > 0 and not export_settings['gltf_embed_buffers']:
-            file = open(export_settings['gltf_filedirectory'] + export_settings['gltf_binaryfilename'], "wb")
+            file = open(export_settings['gltf_filedirectory'] + binary_path, "wb")
             file.write(binary)
             file.close()
         
     else:
-        file = open(export_settings['gltf_filepath'], "wb")
+        file = open(file_path, "wb")
 
         glTF_data = glTF_encoded.encode()
         binary = export_settings['gltf_binary']

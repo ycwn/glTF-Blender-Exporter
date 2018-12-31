@@ -58,7 +58,18 @@ def filter_apply(export_settings):
                 current_parent = current_parent.parent
 
     export_settings['filtered_objects'] = filtered_objects
-    
+
+    # Default Name
+
+    if bpy.context.scene.objects.active:
+        export_settings['gltf_default_name'] = bpy.context.scene.objects.active.name
+
+    if not export_settings['gltf_default_name']: # No active object, find a selected one
+        for blender_object in bpy.data.objects:
+            if blender_object.select:
+                export_settings['gltf_default_name'] = blender_object.name
+                break
+
     # Meshes
     
     filtered_meshes = {}
@@ -124,6 +135,9 @@ def filter_apply(export_settings):
             current_blender_mesh.transform(world_to_local)
             temporary_meshes.append(current_blender_mesh)
 
+        if not export_settings['gltf_default_name']: # None is active or selected, use one of the meshes
+            export_settings['gltf_default_name'] = current_blender_object.name
+
         filtered_meshes[blender_mesh.name] = current_blender_mesh
         filtered_vertex_groups[blender_mesh.name] = current_blender_object.vertex_groups
         
@@ -173,6 +187,9 @@ def filter_apply(export_settings):
             current_blender_mesh.transform(world_to_local)
             temporary_meshes.append(current_blender_mesh)
 
+        if not export_settings['gltf_default_name']: # None is active or selected, use one of the curves
+            export_settings['gltf_default_name'] = blender_curve.name
+
         filtered_meshes[blender_curve.name] = current_blender_mesh
         filtered_vertex_groups[blender_curve.name] = current_blender_object.vertex_groups
     
@@ -181,7 +198,10 @@ def filter_apply(export_settings):
     export_settings['filtered_meshes'] = filtered_meshes
     export_settings['filtered_vertex_groups'] = filtered_vertex_groups
     export_settings['temporary_meshes'] = temporary_meshes
-    
+
+    if not export_settings['gltf_default_name']: # None is active, or selected, and no meshes or curves either
+        export_settings['gltf_default_name'] = "Unknown"
+
     #
 
     filtered_materials = []
