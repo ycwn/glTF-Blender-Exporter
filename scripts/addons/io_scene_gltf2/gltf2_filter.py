@@ -116,7 +116,14 @@ def filter_apply(export_settings):
         
         if skip:
             continue
-            
+
+        if export_settings['gltf_local']:
+            world_to_local = current_blender_object.matrix_world.copy()
+            world_to_local.invert_safe()
+            current_blender_mesh = current_blender_mesh.copy()
+            current_blender_mesh.transform(world_to_local)
+            temporary_meshes.append(current_blender_mesh)
+
         filtered_meshes[blender_mesh.name] = current_blender_mesh
         filtered_vertex_groups[blender_mesh.name] = current_blender_object.vertex_groups
         
