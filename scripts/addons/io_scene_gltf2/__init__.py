@@ -189,14 +189,14 @@ class ExportGLTF2_Base():
             default=True
     )
 
-    export_apply = BoolProperty(
-            name='Apply modifiers',
+    export_local = BoolProperty(
+            name='Local origin',
             description='',
             default=False
     )
 
-    export_local = BoolProperty(
-            name='Local origin',
+    export_apply = BoolProperty(
+            name='Apply modifiers',
             description='',
             default=False
     )
@@ -345,8 +345,8 @@ class ExportGLTF2_Base():
         export_settings['gltf_layers'] = self.export_layers
         export_settings['gltf_extras'] = self.export_extras
         export_settings['gltf_yup'] = self.export_yup
-        export_settings['gltf_apply'] = self.export_apply
         export_settings['gltf_local'] = self.export_local
+        export_settings['gltf_apply'] = self.export_apply
         export_settings['gltf_animations'] = self.export_animations
         if self.export_animations:
             export_settings['gltf_current_frame'] = False
@@ -401,13 +401,13 @@ class ExportGLTF2_Base():
         col.prop(self, 'export_layers')
         col.prop(self, 'export_extras')
         col.prop(self, 'export_yup')
+        col.prop(self, 'export_local')
 
         col = layout.box().column()
         col.label('Meshes:', icon='MESH_DATA')
         col.prop(self, 'export_apply')
         col.prop(self, 'export_indices')
         col.prop(self, 'export_force_indices')
-        col.prop(self, 'export_local')
 
         col = layout.box().column()
         col.label('Attributes:', icon='SURFACE_DATA')
