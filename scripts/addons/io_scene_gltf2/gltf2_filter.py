@@ -75,6 +75,7 @@ def filter_apply(export_settings):
     filtered_meshes = {}
     filtered_vertex_groups = {}
     temporary_meshes = []
+    name_mapping = {}
     
     for blender_mesh in bpy.data.meshes:
         
@@ -140,6 +141,7 @@ def filter_apply(export_settings):
 
         filtered_meshes[blender_mesh.name] = current_blender_mesh
         filtered_vertex_groups[blender_mesh.name] = current_blender_object.vertex_groups
+        name_mapping[blender_mesh.name] = current_blender_object.name
         
     # Curves
     
@@ -188,16 +190,18 @@ def filter_apply(export_settings):
             temporary_meshes.append(current_blender_mesh)
 
         if not export_settings['gltf_default_name']: # None is active or selected, use one of the curves
-            export_settings['gltf_default_name'] = blender_curve.name
+            export_settings['gltf_default_name'] = current_blender_object.name
 
         filtered_meshes[blender_curve.name] = current_blender_mesh
         filtered_vertex_groups[blender_curve.name] = current_blender_object.vertex_groups
+        name_mapping[blender_curve.name] = current_blender_object.name
     
     # 
             
     export_settings['filtered_meshes'] = filtered_meshes
     export_settings['filtered_vertex_groups'] = filtered_vertex_groups
     export_settings['temporary_meshes'] = temporary_meshes
+    export_settings['name_mapping'] = name_mapping
 
     if not export_settings['gltf_default_name']: # None is active, or selected, and no meshes or curves either
         export_settings['gltf_default_name'] = "Unknown"

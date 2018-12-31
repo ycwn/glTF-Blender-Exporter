@@ -80,79 +80,91 @@ def save(operator,
     
     #
 
-    glTF = {}
+    mesh_list = []
 
-    generate_glTF(operator, context, export_settings, glTF)
+    if export_settings['gltf_separate']:
+        for name, mesh in export_settings['filtered_meshes'].items():
+            mesh_list.append([ name, { name: mesh }])
 
-    #
+    else:
+        mesh_list = [ export_settings['gltf_default_name'], export_settings['filtered_meshes'] ]
 
-    indent = None
-    separators = separators=(',', ':')
 
-    if export_settings['gltf_format'] == 'ASCII' and not export_settings['gltf_strip']:
-        indent = 4
-        # The comma is typically followed by a newline, so no trailing whitespace is needed on it.
-        separators = separators=(',', ' : ')
+    for mesh_name, mesh_data in mesh_list:
 
-    glTF_encoded = json.dumps(glTF, indent=indent, separators=separators, sort_keys=True, cls=BlenderEncoder)
+        glTF = {}
+        export_settings['filtered_meshes'] = mesh_data
+        generate_glTF(operator, context, export_settings, glTF)
+
+        #
+
+        indent = None
+        separators = separators=(',', ':')
+
+        if export_settings['gltf_format'] == 'ASCII' and not export_settings['gltf_strip']:
+            indent = 4
+            # The comma is typically followed by a newline, so no trailing whitespace is needed on it.
+            separators = separators=(',', ' : ')
+
+        glTF_encoded = json.dumps(glTF, indent=indent, separators=separators, sort_keys=True, cls=BlenderEncoder)
     
-    #
+        #
 
-    object_name = export_settings['gltf_default_name']
-    file_path   = export_settings['gltf_filepath'].replace('{NAME}', object_name)
-    binary_path = export_settings['gltf_binaryfilename'].replace('{NAME}', object_name)
+        object_name = export_settings['name_mapping'][mesh_name]
+        file_path   = export_settings['gltf_filepath'].replace('{NAME}', object_name)
+        binary_path = export_settings['gltf_binaryfilename'].replace('{NAME}', object_name)
 
-    if export_settings['gltf_format'] == 'ASCII':
-        file = open(file_path, "w", encoding="utf8", newline="\n")
-        file.write(glTF_encoded)
-        file.write("\n")
-        file.close()
-        
-        binary = export_settings['gltf_binary']
-        if len(binary) > 0 and not export_settings['gltf_embed_buffers']:
-            file = open(export_settings['gltf_filedirectory'] + binary_path, "wb")
-            file.write(binary)
+        if export_settings['gltf_format'] == 'ASCII':
+            file = open(file_path, "w", encoding="utf8", newline="\n")
+            file.write(glTF_encoded)
+            file.write("\n")
             file.close()
         
-    else:
-        file = open(file_path, "wb")
+            binary = export_settings['gltf_binary']
+            if len(binary) > 0 and not export_settings['gltf_embed_buffers']:
+                file = open(export_settings['gltf_filedirectory'] + binary_path, "wb")
+                file.write(binary)
+                file.close()
 
-        glTF_data = glTF_encoded.encode()
-        binary = export_settings['gltf_binary']
+        else:
+            file = open(file_path, "wb")
 
-        length_gtlf = len(glTF_data)
-        spaces_gltf = (4 - (length_gtlf & 3)) & 3
-        length_gtlf += spaces_gltf
+            glTF_data = glTF_encoded.encode()
+            binary = export_settings['gltf_binary']
 
-        length_bin = len(binary)
-        zeros_bin = (4 - (length_bin & 3)) & 3
-        length_bin += zeros_bin
+            length_gtlf = len(glTF_data)
+            spaces_gltf = (4 - (length_gtlf & 3)) & 3
+            length_gtlf += spaces_gltf
 
-        length = 12 + 8 + length_gtlf
-        if length_bin > 0:
-            length += 8 + length_bin
+            length_bin = len(binary)
+            zeros_bin = (4 - (length_bin & 3)) & 3
+            length_bin += zeros_bin
+
+            length = 12 + 8 + length_gtlf
+            if length_bin > 0:
+                length += 8 + length_bin
         
-        # Header (Version 2)
-        file.write('glTF'.encode())
-        file.write(struct.pack("I", 2))
-        file.write(struct.pack("I", length))
+            # Header (Version 2)
+            file.write('glTF'.encode())
+            file.write(struct.pack("I", 2))
+            file.write(struct.pack("I", length))
         
-        # Chunk 0 (JSON)
-        file.write(struct.pack("I", length_gtlf)) 
-        file.write('JSON'.encode())
-        file.write(glTF_data)
-        for i in range(0, spaces_gltf):
-            file.write(' '.encode())
+            # Chunk 0 (JSON)
+            file.write(struct.pack("I", length_gtlf))
+            file.write('JSON'.encode())
+            file.write(glTF_data)
+            for i in range(0, spaces_gltf):
+                file.write(' '.encode())
 
-        # Chunk 1 (BIN)
-        if length_bin > 0:
-            file.write(struct.pack("I", length_bin)) 
-            file.write('BIN\0'.encode())
-            file.write(binary)
-            for i in range(0, zeros_bin):
-                file.write('\0'.encode())
+            # Chunk 1 (BIN)
+            if length_bin > 0:
+                file.write(struct.pack("I", length_bin))
+                file.write('BIN\0'.encode())
+                file.write(binary)
+                for i in range(0, zeros_bin):
+                    file.write('\0'.encode())
             
-        file.close()
+            file.close()
         
     #
     

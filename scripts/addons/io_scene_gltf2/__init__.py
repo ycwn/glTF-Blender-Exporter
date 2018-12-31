@@ -171,6 +171,12 @@ class ExportGLTF2_Base():
             default=False
     )
 
+    export_separate = BoolProperty(
+            name='Export meshes to separate files',
+            description='',
+            default=False
+    )
+
     export_layers = BoolProperty(
             name='Export all layers',
             description='',
@@ -343,6 +349,7 @@ class ExportGLTF2_Base():
         else:
             export_settings['gltf_camera_infinite'] = False
         export_settings['gltf_selected'] = self.export_selected
+        export_settings['gltf_separate'] = self.export_separate
         export_settings['gltf_layers'] = self.export_layers
         export_settings['gltf_extras'] = self.export_extras
         export_settings['gltf_yup'] = self.export_yup
@@ -399,6 +406,7 @@ class ExportGLTF2_Base():
         col = layout.box().column()
         col.label('Nodes:', icon='OOPS')
         col.prop(self, 'export_selected')
+        col.prop(self, 'export_separate')
         col.prop(self, 'export_layers')
         col.prop(self, 'export_extras')
         col.prop(self, 'export_yup')
