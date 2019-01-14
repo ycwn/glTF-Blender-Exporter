@@ -39,19 +39,19 @@ def prepare(export_settings):
     """
     if bpy.context.active_object is not None and bpy.context.active_object.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
-    
+
     filter_apply(export_settings)
-    
-    export_settings['gltf_original_frame'] = bpy.context.scene.frame_current 
-    
+
+    export_settings['gltf_original_frame'] = bpy.context.scene.frame_current
+
     export_settings['gltf_use_no_color'] = []
-    
+
     export_settings['gltf_joint_cache'] = {}
-    
+
     if not export_settings['gltf_current_frame']:
         bpy.context.scene.frame_set(0)
 
-    
+
 def finish(export_settings):
     """
     Brings back Blender into its original state before export and cleans up temporary objects.
@@ -59,8 +59,8 @@ def finish(export_settings):
     if export_settings['temporary_meshes'] is not None:
         for temporary_mesh in export_settings['temporary_meshes']:
             bpy.data.meshes.remove(temporary_mesh)
-            
-    bpy.context.scene.frame_set(export_settings['gltf_original_frame'])  
+
+    bpy.context.scene.frame_set(export_settings['gltf_original_frame'])
 
 
 def save(operator,
@@ -73,27 +73,41 @@ def save(operator,
     print_console('INFO', 'Starting glTF 2.0 export')
     bpy.context.window_manager.progress_begin(0, 100)
     bpy.context.window_manager.progress_update(0)
-    
+
     #
-    
+
     prepare(export_settings)
-    
+
     #
 
     mesh_list = []
+    mesh_map  = export_settings['name_mapping']
+    mesh_map['__default'] = export_settings['gltf_default_name']
 
     if export_settings['gltf_separate']:
+
+        mesh_obj_names = [ mesh_map[x] for x in export_settings['filtered_meshes'].keys() ]
+
         for name, mesh in export_settings['filtered_meshes'].items():
-            mesh_list.append([ name, { name: mesh }])
+
+            objects       = []
+            mesh_obj_name = mesh_map[name]
+
+            for obj in export_settings['filtered_objects']:
+                if obj.name == mesh_obj_name or obj.name not in mesh_obj_names:
+                    objects.append(obj)
+
+            mesh_list.append([ name, { name: mesh }, objects ])
 
     else:
-        mesh_list = [ export_settings['gltf_default_name'], export_settings['filtered_meshes'] ]
+        mesh_list = [[ '__default', export_settings['filtered_meshes'], export_settings['filtered_objects'] ]]
 
 
-    for mesh_name, mesh_data in mesh_list:
+    for mesh_name, mesh_data, mesh_objects in mesh_list:
 
         glTF = {}
-        export_settings['filtered_meshes'] = mesh_data
+        export_settings['filtered_meshes']  = mesh_data
+        export_settings['filtered_objects'] = mesh_objects
         generate_glTF(operator, context, export_settings, glTF)
 
         #
@@ -107,10 +121,10 @@ def save(operator,
             separators = separators=(',', ' : ')
 
         glTF_encoded = json.dumps(glTF, indent=indent, separators=separators, sort_keys=True, cls=BlenderEncoder)
-    
+
         #
 
-        object_name = export_settings['name_mapping'][mesh_name]
+        object_name = mesh_map[mesh_name]
         file_path   = export_settings['gltf_filepath'].replace('{NAME}', object_name)
         binary_path = export_settings['gltf_binaryfilename'].replace('{NAME}', object_name)
 
@@ -119,7 +133,7 @@ def save(operator,
             file.write(glTF_encoded)
             file.write("\n")
             file.close()
-        
+
             binary = export_settings['gltf_binary']
             if len(binary) > 0 and not export_settings['gltf_embed_buffers']:
                 file = open(export_settings['gltf_filedirectory'] + binary_path, "wb")
@@ -143,12 +157,12 @@ def save(operator,
             length = 12 + 8 + length_gtlf
             if length_bin > 0:
                 length += 8 + length_bin
-        
+
             # Header (Version 2)
             file.write('glTF'.encode())
             file.write(struct.pack("I", 2))
             file.write(struct.pack("I", length))
-        
+
             # Chunk 0 (JSON)
             file.write(struct.pack("I", length_gtlf))
             file.write('JSON'.encode())
@@ -163,13 +177,13 @@ def save(operator,
                 file.write(binary)
                 for i in range(0, zeros_bin):
                     file.write('\0'.encode())
-            
+
             file.close()
-        
+
     #
-    
+
     finish(export_settings)
-    
+
     #
 
     print_console('INFO', 'Finished glTF 2.0 export')
